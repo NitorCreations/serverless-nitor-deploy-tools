@@ -1,0 +1,27 @@
+{
+  "name": "serverless-nitor-deploy-tools",
+  "version": "0.1.0",
+  "description": "Serverless plugin to use nitor deploy tools (ndt) properties in a Serverless project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NitorCreations/serverless-nitor-deploy-tools.git"
+  },
+  "keywords": [
+    "serverless"
+  ],
+  "author": "Joonas Laitio",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/NitorCreations/serverless-nitor-deploy-tools/issues"
+  },
+  "homepage": "https://github.com/NitorCreations/serverless-nitor-deploy-tools#readme",
+  "dependencies": {
+    "lodash": "^4.17.5",
+    "properties-parser": "^0.3.1",
+    "traverse": "^0.6.6"
+  }
+}
