@@ -8,21 +8,25 @@ const _ = require('lodash');
 const traverse = require('traverse');
 const properties = require('properties-parser');
 
-const getGitBranch = () => new Promise((resolve, reject) => {
-  exec('git rev-parse --abbrev-ref HEAD', (error, stdout, stderr) => {
+const promisexec = (command) => new Promise((resolve, reject) => {
+  exec(command, (error, stdout, stderr) => {
     if (error) reject(new Error(error));
     else if (stderr) reject(new Error(stderr));
     else resolve(stdout.trim());
   });
 });
 
-const getGitRoot = () => new Promise((resolve, reject) => {
-  exec('git rev-parse --show-toplevel', (error, stdout, stderr) => {
-    if (error) reject(new Error(error));
-    else if (stderr) reject(new Error(stderr));
-    else resolve(stdout.trim());
-  });
-});
+const getGitBranch = (serverless) => {
+  if (process.env.GIT_BRANCH) {
+    serverless.cli.log(`Using git branch '${process.env.GIT_BRANCH}' from ENV`);
+    return Promise.resolve(process.env.GIT_BRANCH);
+  } else {
+    serverless.cli.log('Using current git branch');
+    return promisexec('git rev-parse --abbrev-ref HEAD');
+  }
+};
+
+const getGitRoot = () => promisexec('git rev-parse --show-toplevel');
 
 const getAllFoldersToGitRoot = () => {
   const getDirs = (acc, current) => (root) => {
@@ -40,8 +44,8 @@ const getAllFoldersToGitRoot = () => {
   return getGitRoot().then(getDirs([], process.cwd())).then(a => a.reverse());
 };
 
-const getNdtParameters = () => {
-  return Promise.all([getGitBranch(), getAllFoldersToGitRoot()])
+const getNdtParameters = (serverless) => {
+  return Promise.all([getGitBranch(serverless), getAllFoldersToGitRoot()])
     .then(([branch, dirs]) => {
 
       const commonParams = dirs.reduce((acc, dir) => {
@@ -79,7 +83,7 @@ class ServerlessPlugin {
   }
 
   fillNdtProperties(serverless, options) {
-    return getNdtParameters()
+    return getNdtParameters(serverless)
       .then(ndtParams => {
         serverless.cli.log('Resolved NDT params: ' + JSON.stringify(ndtParams));
 
@@ -91,8 +95,6 @@ class ServerlessPlugin {
         traverse(_.omit(serverless.service, ['serverless'])).forEach(function (x) {
           if (typeof x === 'string') this.update(repWithPar(x));
         });
-
-        return getAllFoldersToGitRoot();
       });
   }
 }
