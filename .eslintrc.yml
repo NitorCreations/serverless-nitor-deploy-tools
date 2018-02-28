@@ -1,0 +1,33 @@
+env:
+  es6: true
+  node: true
+  mocha: true
+extends: 'eslint:recommended'
+parserOptions:
+  ecmaVersion: 8
+  sourceType: module
+rules:
+  indent:
+    - error
+    - 2
+  linebreak-style:
+    - error
+    - unix
+  quotes:
+    - error
+    - single
+  semi:
+    - error
+    - always
+  no-throw-literal:
+    - error
+  no-trailing-spaces:
+    - error
+  no-console:
+    - off
+  no-template-curly-in-string:
+    - warn  	
+  array-callback-return:
+    - warn
+  no-extra-bind:
+    - warn
