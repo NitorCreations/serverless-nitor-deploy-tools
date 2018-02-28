@@ -26,27 +26,29 @@ const getGitBranch = (serverless) => {
   }
 };
 
-const getGitRoot = () => promisexec('git rev-parse --show-toplevel');
-
-const getAllFoldersToGitRoot = () => {
-  const getDirs = (acc, current) => (root) => {
-    acc.push(current);
-
-    if (root == current) {
+const getAllFoldersToSystemRoot = () => {
+  const getDirs = (acc, current) => {
+    const parent = path.resolve(current, '..');
+    if (parent === current) {
       return acc;
-    }
-    else {
-      const parent = path.resolve(current, '..');
-      return getDirs(acc, parent)(root);
+    } else {
+      acc.push(current);
+      return getDirs(acc, parent);
     }
   };
 
-  return getGitRoot().then(getDirs([], process.cwd())).then(a => a.reverse());
+  return getDirs([], process.cwd());
 };
 
 const getNdtParameters = (serverless) => {
-  return Promise.all([getGitBranch(serverless), getAllFoldersToGitRoot()])
-    .then(([branch, dirs]) => {
+  return Promise.all([getGitBranch(serverless), getAllFoldersToSystemRoot()])
+    .then(([branch, allDirs]) => {
+
+      // If explicit root property file exists, discard all ancestors of that directory
+      const explicitRoot = allDirs.find(dir => fs.existsSync(`${dir}/infra-root.properties`));
+      const dirs = ((explicitRoot) ? _.dropRightWhile(allDirs, dir => dir !== explicitRoot) : allDirs).reverse();
+
+      const rootParams = (explicitRoot) ? properties.read(`${explicitRoot}/infra-root.properties`) : {};
 
       const commonParams = dirs.reduce((acc, dir) => {
         const file = `${dir}/infra.properties`;
@@ -66,7 +68,7 @@ const getNdtParameters = (serverless) => {
         }
       }, {});
 
-      return Object.assign({}, commonParams, branchParams);
+      return Object.assign({}, rootParams, commonParams, branchParams);
     });
 };
 
